@@ -9,7 +9,7 @@ This overview used the [react-compose-sample](https://github.com/sendbird/SendBi
 - All tabs open in the browser are logged in as the same user. The cross tab communication does not currently handle user information and only supports a single user.
 - Notification are only displayed for User type messages
 - Different people have different prefences for chat. The toggles are meant to provide a few options, but even if your scenario is not configurable in this demo it is likely possible with Sendbird.
-- The user experience will always be best all tabs maintain their websocket connection at all times. For Sendbird users that do not wish to that, this is a decent starting point.
+- The user experience will be best when all tabs maintain their websocket connection as much as possible. For Sendbird users that do not wish to that, this is a decent starting point.
 - Not all APIs are available in all browsers. This uses the Notification and Broadcast channel APIs. This is one of many ways to do this and you may have to concider alternatives depending on your use case.
   
 ## How to run
