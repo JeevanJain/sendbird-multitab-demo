@@ -3,7 +3,6 @@ import { withSendBird } from 'sendbird-uikit';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import ModeSelect from './ModeSelect';
-import { v4 } from 'uuid';
 import {
   connectionModeOptions,
   CONNECTION_MODE_ALL,
