@@ -1,3 +1,15 @@
+## Overview
+
+This proof of concept demo shows how to handle Sendbird in a browser with multiple tabs open. Some users may prefer to limit their browser to a single connection of either the currently visible tab, or in the case a non Senbird tab is open limit the connection to the most recently viewed Sendbird tab.
+
+This overview used the [react-compose-sample](https://github.com/sendbird/SendBird-JavaScript/tree/master/uikit-samples/composed-react-app) from the ui-kit-samples in the [Sendbird JavaScript Samples Repository](https://github.com/sendbird/SendBird-JavaScript).
+
+## Assumptions
+
+- All tabs open in the browser are logged in as the same user. The cross tab communication does not currently handle user information and only supports a single user.
+- Different people have different prefences for chat. The toggles are meant to provide a few options, but even if your scenario is not configurable in this demo it is likely possible with Sendbird.
+- The user experience will always be best all tabs maintain their websocket connection at all times. For Sendbird users that do not wish to that, this is a decent starting point.
+
 ## How to run
 
 Rename the file .env.example to .env and add your [APPID](https://dashboard.sendbird.com/)
