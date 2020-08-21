@@ -9,7 +9,6 @@ import {
   CONNECTION_MODE_ALL,
   CONNECTION_MODE_VISIBLE,
   CONNECTION_MODE_RECENT,
-  notificationModeOptions,
   EVENT_FOCUS_CLAIMED,
   EVENT_NOTIFY,
   EVENT_UPDATE_MULTITAB_SETTINGS,
@@ -18,6 +17,8 @@ import SnackbarNotification from './SnackbarNotification';
 import { Button } from '@material-ui/core';
 
 const MultitabSettings = ({ state }) => {
+  const [activelyFocused, setActivelyFocused] = useState(true);
+  const [latestFocused, setLatestFocused] = useState(true);
   const [notification, setNotification] = useState('');
   const [connectionMode, setConnectionMode] = useState(CONNECTION_MODE_ALL);
   const [toastNotificationEnabled, setToastNotificationEnabled] = useState(
@@ -35,6 +36,7 @@ const MultitabSettings = ({ state }) => {
       handleMultitabEvent(data);
     };
     setMultitabChannel(channel);
+    claimFocus(channel);
 
     return () => {
       channel.close();
@@ -44,24 +46,18 @@ const MultitabSettings = ({ state }) => {
 
   useEffect(() => {
     if (initialized) {
-      console.log(state.stores);
+      const { userId } = sdk.currentUser;
       const ChannelHandler = new sdk.ChannelHandler();
-      // If only showing on connected clients this does not need to be sent through the multitab broadcast channel
-      // and can be received on each client
-      const UNIQUE_HANDLER_ID = v4();
+      const UNIQUE_HANDLER_ID = `${userId}-notification-channel-handler`;
       ChannelHandler.onMessageReceived = function (channel, message) {
-        const { userId } = sdk.currentUser;
-        console.log(message);
         if (
           message.message &&
           !(message._sender && message._sender.userId === userId)
         ) {
-          console.log('toast enabled', toastNotificationEnabled);
-          console.log('browser notification enabled', browserNotificationEnabled);
           if (toastNotificationEnabled) {
             setNotification(`message received: ${message.message}`);
           }
-          if (browserNotificationEnabled) {
+          if (browserNotificationEnabled && latestFocused) {
             displayBrowserNotification(message.message);
           }
         }
@@ -71,11 +67,15 @@ const MultitabSettings = ({ state }) => {
         sdk.removeChannelHandler(UNIQUE_HANDLER_ID);
       };
     }
-  }, [initialized, toastNotificationEnabled, browserNotificationEnabled]);
+  }, [
+    initialized,
+    toastNotificationEnabled,
+    browserNotificationEnabled,
+    latestFocused,
+  ]);
 
   useEffect(() => {
     if (initialized) {
-      console.log('event listeners added');
       window.addEventListener('focus', onFocus);
       window.addEventListener('blur', onBlur);
     }
@@ -93,12 +93,19 @@ const MultitabSettings = ({ state }) => {
 
   const onFocus = () => {
     sdk.setForegroundState();
-    multitabChannel.postMessage({ event: EVENT_FOCUS_CLAIMED });
+    claimFocus(multitabChannel);
+  };
+
+  const claimFocus = (channel) => {
+    channel.postMessage({ event: EVENT_FOCUS_CLAIMED });
+    setActivelyFocused(true);
+    setLatestFocused(true);
   };
 
   const onBlur = () => {
     if (connectionMode === CONNECTION_MODE_VISIBLE) {
       sdk.setBackgroundState();
+      setActivelyFocused(false);
     }
   };
 
@@ -137,6 +144,8 @@ const MultitabSettings = ({ state }) => {
   const handleMultitabEvent = ({ event, message, settings }) => {
     switch (event) {
       case EVENT_FOCUS_CLAIMED:
+        console.log('latest focus falst');
+        setLatestFocused(false);
         if (
           connectionMode in [CONNECTION_MODE_VISIBLE, CONNECTION_MODE_RECENT]
         ) {
@@ -189,7 +198,6 @@ const MultitabSettings = ({ state }) => {
   };
 
   const broadcastMultitabSettings = (newSettings) => {
-    console.log('broadcasting settings', newSettings);
     multitabChannel.postMessage({
       event: EVENT_UPDATE_MULTITAB_SETTINGS,
       settings: newSettings,
@@ -197,7 +205,6 @@ const MultitabSettings = ({ state }) => {
   };
 
   const syncMultitabSettings = (settings) => {
-    console.log('syncing settings', settings);
     const {
       connectionMode,
       toastNotificationEnabled,
