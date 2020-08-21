@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { withSendBird } from 'sendbird-uikit';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -6,19 +6,37 @@ import ModeSelect from './ModeSelect';
 import {
   connectionModeOptions,
   CONNECTION_MODE_ALL,
+  CONNECTION_MODE_VISIBLE,
+  CONNECTION_MODE_RECENT,
   notificationModeOptions,
   NOTIFICATION_MODE_TOAST_ALL,
+  NOTIFICATION_MODE_TOAST_CONNECTED,
+  NOTIFICATION_MODE_TOAST_NONE,
+  EVENT_FOCUS_CLAIMED,
+  EVENT_NOTIFY,
 } from './MultitabSettingOptions';
 
 const MultitabSettings = ({ state }) => {
-  const [connectionMode, setConnectionMode] = React.useState(
-    CONNECTION_MODE_ALL,
-  );
-  const [notificationMode, setNotificationMode] = React.useState(
+  const [connectionMode, setConnectionMode] = useState(CONNECTION_MODE_ALL);
+  const [notificationMode, setNotificationMode] = useState(
     NOTIFICATION_MODE_TOAST_ALL,
   );
-  const [localPushEnabled, setLocalPushEnabled] = React.useState(true);
+  const [localPushEnabled, setLocalPushEnabled] = useState(true);
   const { initialized, sdk } = state.stores.sdkStore;
+  const [multitabChannel, setMultitabChannel] = useState(true);
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('Sendbird Multitab');
+    channel.onmessage = ({ data }) => {
+      handleMultitabEvent(data);
+    };
+    setMultitabChannel(channel);
+
+    return () => {
+      channel.close();
+      setMultitabChannel(null);
+    };
+  }, []);
 
   useEffect(() => {
     if (initialized) {
@@ -30,18 +48,37 @@ const MultitabSettings = ({ state }) => {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('blur', onBlur);
     };
-  }, [initialized]);
+  }, [initialized, connectionMode, notificationMode]);
 
   const onFocus = () => {
     sdk.setForegroundState();
+    multitabChannel.postMessage({ event: EVENT_FOCUS_CLAIMED });
   };
 
   const onBlur = () => {
-    sdk.setBackgroundState();
+    if (connectionMode === CONNECTION_MODE_VISIBLE) {
+      sdk.setBackgroundState();
+    }
   };
 
   const handleLocalPushChange = (event) => {
     setLocalPushEnabled(event.target.checked);
+  };
+
+  const handleMultitabEvent = ({ event }) => {
+    switch (event) {
+      case EVENT_FOCUS_CLAIMED:
+        if (
+          connectionMode in [CONNECTION_MODE_VISIBLE, CONNECTION_MODE_RECENT]
+        ) {
+          sdk.setBackgroundState();
+        }
+        break;
+      case EVENT_NOTIFY:
+
+      default:
+        break;
+    }
   };
 
   return (

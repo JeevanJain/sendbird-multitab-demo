@@ -18,7 +18,7 @@ export default function ConnectionModeSelect({ name, mode, setMode, options }) {
         onChange={handleChange}
       >
         {options.map((option) => (
-          <MenuItem value={option}>{option}</MenuItem>
+          <MenuItem key={option} value={option}>{option}</MenuItem>
         ))}
       </Select>
     </div>
