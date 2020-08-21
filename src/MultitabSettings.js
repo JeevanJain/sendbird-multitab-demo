@@ -144,7 +144,6 @@ const MultitabSettings = ({ state }) => {
   const handleMultitabEvent = ({ event, message, settings }) => {
     switch (event) {
       case EVENT_FOCUS_CLAIMED:
-        console.log('latest focus falst');
         setLatestFocused(false);
         if (
           connectionMode in [CONNECTION_MODE_VISIBLE, CONNECTION_MODE_RECENT]

@@ -5,7 +5,6 @@ import Select from '@material-ui/core/Select';
 
 export default function ModeSelect({ name, mode, setMode, options }) {
   const handleChange = (event) => {
-    console.log('mode select', event.target.value)
     setMode(event.target.value);
   };
 
