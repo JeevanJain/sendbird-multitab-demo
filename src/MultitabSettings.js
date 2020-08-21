@@ -15,20 +15,26 @@ import {
   NOTIFICATION_MODE_TOAST_NONE,
   EVENT_FOCUS_CLAIMED,
   EVENT_NOTIFY,
+  EVENT_UPDATE_MULTITAB_SETTINGS,
 } from './MultitabSettingOptions';
 import SnackbarNotification from './SnackbarNotification';
 import { Button } from '@material-ui/core';
 
 const MultitabSettings = ({ state }) => {
   const [notification, setNotification] = useState('');
+  const [multitabSettings, setMultitabSettings] = useState({
+    connectionMode: CONNECTION_MODE_ALL,
+    notificationMode: NOTIFICATION_MODE_TOAST_ALL,
+    browserNotificationEnabled: true,
+  });
   const [backgroundMode, setBackgroundMode] = useState(false);
-  const [connectionMode, setConnectionMode] = useState(CONNECTION_MODE_ALL);
-  const [notificationMode, setNotificationMode] = useState(
-    NOTIFICATION_MODE_TOAST_ALL,
-  );
-  const [browserNotificationEnabled, setBrowserNotificationEnabled] = useState(
-    true,
-  );
+  // const [connectionMode, setConnectionMode] = useState(CONNECTION_MODE_ALL);
+  // const [notificationMode, setNotificationMode] = useState(
+  //   NOTIFICATION_MODE_TOAST_ALL,
+  // );
+  // const [browserNotificationEnabled, setBrowserNotificationEnabled] = useState(
+  //   true,
+  // );
   const { initialized, sdk } = state.stores.sdkStore;
   const [multitabChannel, setMultitabChannel] = useState(true);
 
@@ -60,6 +66,7 @@ const MultitabSettings = ({ state }) => {
           !(message._sender && message._sender.userId === userId)
         ) {
           setNotification(`message received: ${message.message}`);
+          const { browserNotificationEnabled } = multitabSettings;
           if (browserNotificationEnabled) {
             displayBrowserNotification(message.message);
           }
@@ -83,7 +90,7 @@ const MultitabSettings = ({ state }) => {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('blur', onBlur);
     };
-  }, [initialized, connectionMode, notificationMode]);
+  }, [initialized, multitabSettings]);
 
   const onFocus = () => {
     sdk.setForegroundState();
@@ -92,6 +99,7 @@ const MultitabSettings = ({ state }) => {
   };
 
   const onBlur = () => {
+    const { connectionMode } = multitabSettings;
     if (connectionMode === CONNECTION_MODE_VISIBLE) {
       setBackgroundMode(true);
       sdk.setBackgroundState();
@@ -114,15 +122,11 @@ const MultitabSettings = ({ state }) => {
   };
 
   useEffect(() => {
+    const { browserNotificationEnabled } = multitabSettings;
     if (browserNotificationEnabled) {
       requestBrowserNotificationPermission();
     }
-  }, [browserNotificationEnabled]);
-
-  const handleBrowserNotificationEnabled = (event) => {
-    const enabled = event.target.checked;
-    setBrowserNotificationEnabled(event.target.checked);
-  };
+  }, [multitabSettings]);
 
   const displayBrowserNotification = (message) => {
     if ('Notification' in window) {
@@ -135,9 +139,10 @@ const MultitabSettings = ({ state }) => {
     }
   };
 
-  const handleMultitabEvent = ({ event, message }) => {
+  const handleMultitabEvent = ({ event, message, settings }) => {
     switch (event) {
       case EVENT_FOCUS_CLAIMED:
+        const { connectionMode } = multitabSettings;
         if (
           connectionMode in [CONNECTION_MODE_VISIBLE, CONNECTION_MODE_RECENT]
         ) {
@@ -146,6 +151,7 @@ const MultitabSettings = ({ state }) => {
         }
         break;
       case EVENT_NOTIFY:
+        const { notificationMode } = multitabSettings;
         if (
           notificationMode === NOTIFICATION_MODE_TOAST_ALL ||
           (!backgroundMode &&
@@ -154,9 +160,53 @@ const MultitabSettings = ({ state }) => {
           setNotification(message);
         }
         break;
+      case EVENT_UPDATE_MULTITAB_SETTINGS:
+        syncMultitabSettings(settings);
+        break;
       default:
         break;
     }
+  };
+
+  const handleConnectionModeChange = (connectionMode) => {
+    console.log('connection mode set to ', connectionMode);
+    const newSettings = { ...multitabSettings, ...{ connectionMode } };
+    setMultitabSettings(newSettings);
+    broadcastMultitabSettings(newSettings);
+  };
+
+  const handleNotificationModeChange = (notificationMode) => {
+    console.log('notification mode set to ', notificationMode);
+    const newSettings = { ...multitabSettings, ...{ notificationMode } };
+    setMultitabSettings(newSettings);
+    broadcastMultitabSettings(newSettings);
+  };
+
+  const handleBrowserNotificationEnabled = (event) => {
+    const browserNotificationEnabled = event.target.checked;
+    console.log(
+      'browser notification mode set to ',
+      browserNotificationEnabled,
+    );
+    const newSettings = {
+      ...multitabSettings,
+      ...{ browserNotificationEnabled },
+    };
+    setMultitabSettings(newSettings);
+    broadcastMultitabSettings(newSettings);
+  };
+
+  const broadcastMultitabSettings = (newSettings) => {
+    console.log('broadcasting settings', newSettings);
+    multitabChannel.postMessage({
+      event: EVENT_UPDATE_MULTITAB_SETTINGS,
+      settings: newSettings,
+    });
+  };
+
+  const syncMultitabSettings = (settings) => {
+    console.log('syncing settings', settings);
+    setMultitabSettings(settings);
   };
 
   const handleCloseSnackbar = (event, reason) => {
@@ -169,23 +219,23 @@ const MultitabSettings = ({ state }) => {
 
   return (
     <div>
-      {String(browserNotificationEnabled)}
+      {String(multitabSettings.browserNotificationEnabled)}
       <ModeSelect
         name={'Connection'}
-        mode={connectionMode}
-        setMode={setConnectionMode}
+        mode={multitabSettings.connectionMode}
+        setMode={handleConnectionModeChange}
         options={connectionModeOptions}
       ></ModeSelect>
       <ModeSelect
         name={'Notification'}
-        mode={notificationMode}
-        setMode={setNotificationMode}
+        mode={multitabSettings.notificationMode}
+        setMode={handleNotificationModeChange}
         options={notificationModeOptions}
       ></ModeSelect>
       <FormControlLabel
         control={
           <Checkbox
-            checked={browserNotificationEnabled}
+            checked={multitabSettings.browserNotificationEnabled}
             onChange={handleBrowserNotificationEnabled}
             name='browserNotificationEnabled'
           />

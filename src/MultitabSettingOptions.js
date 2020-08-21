@@ -8,8 +8,8 @@ export const connectionModeOptions = [
   CONNECTION_MODE_RECENT,
 ];
 
-export const NOTIFICATION_MODE_TOAST_ALL = 'Toast Visible Tab';
-export const NOTIFICATION_MODE_TOAST_CONNECTED = 'Toast Connected Tab';
+export const NOTIFICATION_MODE_TOAST_ALL = 'Toast All Chat Tabs';
+export const NOTIFICATION_MODE_TOAST_CONNECTED = 'Toast All Connected Tabs';
 export const NOTIFICATION_MODE_TOAST_NONE = 'Toast None';
 
 export const notificationModeOptions = [
@@ -20,3 +20,4 @@ export const notificationModeOptions = [
 
 export const EVENT_FOCUS_CLAIMED = 'Chat Focus Claimed';
 export const EVENT_NOTIFY = 'Notify';
+export const EVENT_UPDATE_MULTITAB_SETTINGS = 'Update Multitab Settings';
