@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import FocusListener from './FocusListener';
+import MultitabSettings from './MultitabSettings';
 import './Chat.css';
 
 import { useHistory } from 'react-router-dom';
@@ -29,7 +29,7 @@ export default function Chat({ userId, nickname, theme }) {
         userId={userId}
         nickname={nickname}
       >
-        <FocusListener></FocusListener>
+        <MultitabSettings></MultitabSettings>
         <div className='sendbird-app__wrap'>
           <div className='sendbird-app__channellist-wrap'>
             <ChannelList
